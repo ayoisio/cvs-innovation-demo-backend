@@ -39,5 +39,3 @@ The backend code is written in Python and uses the Flask framework.
 
 8. **Containerization:** The backend is containerized using Docker and deployed on Cloud Run.
 
-
-This backend architecture allows for efficient and scalable processing of medical content review requests, leveraging the power of generative AI and other Google Cloud services.
