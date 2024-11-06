@@ -6,6 +6,8 @@ def structure_claims_analysis(data: Dict[str, Any]) -> Dict[str, Any]:
     """Process API output."""
     # Extract the main text and grounding supports
     text = data['candidates'][0]['content']['parts'][0]['text']
+    if not data['candidates'][0].get('grounding_metadata', {}).get('grounding_supports'):
+        return {}
     grounding_supports = data['candidates'][0]['grounding_metadata']['grounding_supports']
     grounding_chunks = data['candidates'][0]['grounding_metadata']['grounding_chunks']
 

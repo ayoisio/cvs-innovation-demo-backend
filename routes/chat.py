@@ -1,20 +1,14 @@
-import base64
-import io
-import magic
 import traceback
 
 from flask import Blueprint, request, jsonify, Response
-from pydub import AudioSegment
 from vertexai.generative_models import Part, Tool
 
 import src.anthropic.generate as anthropic_generate
-import src.chat.basic_chat as perform_basic_chat
 import src.chat.agent_chat as perform_agent_chat
 import src.routes.utils as endpoint_utils
 import src.remote_config.utils as remote_config_utils
 from src.chat.utils import (
     clean_text,
-    upload_image_to_gcs,
     get_config_and_prompt,
     create_function_declaration
 )
@@ -134,7 +128,6 @@ def task_chat():
             user_id=user_id,
             chat_history_id=chat_history_id,
             tools=[citations_tool],
-            allowed_function_names=["medical_claims_identification", "imprecise_language_identification"]
         )
 
         # Update Firestore with the generated answer

@@ -1,6 +1,4 @@
 import os
-import requests
-import traceback
 import vertexai
 import vertexai.preview.generative_models as generative_models
 from vertexai.generative_models import (
@@ -31,7 +29,6 @@ def generate_text(
     save_session_history: bool = True,
     project_id: str = os.getenv("GOOGLE_CLOUD_PROJECT"),
     tools: List[Any] = None,
-    allowed_function_names: List[str] = None,
     safety_settings: Optional[Dict[str, Any]] = None,
     location: str = "us-central1",
     model_name: str = "gemini-1.5-pro-002",
@@ -43,9 +40,6 @@ def generate_text(
 
     if not tools:
         tools = []
-
-    if allowed_function_names:
-        allowed_function_names = []
 
     if not safety_settings:
         safety_settings = {
@@ -60,8 +54,6 @@ def generate_text(
         chat_history = get_chat_history(user_id, chat_history_id)
     else:
         chat_history_id, chat_history = str(uuid4()), []
-
-    first_run_through = True if not chat_history else False
 
     # Initialize medical claims model
     if engage_workflow:
@@ -166,7 +158,6 @@ def generate_text(
                     break
                 elif function_call_name == 'imprecise_language_identification':
                     try:
-                        print(f"Calling function {function_call_name}...")
                         # Handle imprecise language identification request
                         args = dict(part.function_call.args)
                         rc_to_json_array = lambda repeated_composite: [dict(item) for item in repeated_composite]
@@ -189,8 +180,8 @@ def generate_text(
                         if engage_workflow:
                             next_steps_instruction = (
                                 "Respond that the input text has been processed and summarize the findings. "
-                                " Ask if the user needs help understanding the findings or would like to know more "
-                                " about any finding in particular."
+                                "Ask if the user needs help understanding the findings or would like to know more "
+                                "about any finding in particular."
                             )
                         else:
                             next_steps_instruction = "Proceed"
@@ -210,7 +201,6 @@ def generate_text(
                         # Handle any errors that occurred during the request
                         local_error_message = f"Error when Identifying Imprecise Language: {str(e)}"
                         error_message += f"\n{local_error_message}"
-                        print(f"error_message: {local_error_message}\n{traceback.format_exc()}")
                         response_part = Part.from_function_response(
                             name=function_call_name,
                             response={
@@ -220,7 +210,6 @@ def generate_text(
                         response_parts.append(response_part)
                 elif 'medical_claims_identification':
                     try:
-                        print(f"Calling function {function_call_name}...")
                         # Handle medical claims identification request
                         args = dict(part.function_call.args)
                         rc_to_json_array = lambda repeated_composite: [dict(item) for item in repeated_composite]
@@ -264,7 +253,6 @@ def generate_text(
                         # Handle any errors that occurred during the request
                         local_error_message = f"Error when Identifying Medical Claims: {str(e)}"
                         error_message += f"\n{local_error_message}"
-                        print(f"error_message: {local_error_message}\n{traceback.format_exc()}")
                         response_part = Part.from_function_response(
                             name=function_call_name,
                             response={
@@ -272,10 +260,6 @@ def generate_text(
                                 "instructions": "Error occurred while identifying medical claims. Please try again."},
                         )
                         response_parts.append(response_part)
-                else:
-                    # Unhandled function call
-                    output_text = 'Could not resolve appropriate function and determine an answer.'
-                    break
 
             if break_loop:
                 break
@@ -289,14 +273,10 @@ def generate_text(
                     chat = output_response_model_instance.start_chat(history=chat.history, response_validation=False)
                     response = chat.send_message(response_parts)
     except Exception as e:
-        print(f"Error occurred: {e}\n{traceback.format_exc()}")
-        output_text = f"Please try again. An unexpected error occurred. {e}\n{traceback.format_exc()}"
+        output_text = f"Please try again. An unexpected error occurred."
 
     # Save chat history
     if save_session_history:
         save_chat_history(user_id, chat_history_id, chat.history)
-
-    if error_message:
-        output_text += error_message
 
     return output_text, chat_history_id, processed_claims, processed_imprecise_language_instances
