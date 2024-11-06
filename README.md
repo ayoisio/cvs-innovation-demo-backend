@@ -1,4 +1,4 @@
-# Medical Content Review App (Cloud Run Backend)
+# Medical Content Review App (Backend)
 
 The app uses several Google Cloud services, including:
 
